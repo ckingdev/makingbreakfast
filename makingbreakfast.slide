@@ -1,13 +1,15 @@
 Making Breakfast
-or Basic Concurrency Patterns in Go
+or Basic Concurrency in Go
 18:00 3 Nov 2015
 Tags: concurrency, parallelism, goroutines, channels, sync
 
 Cammie Palone
 Consultant, Software Engineering
 cam@cpalone.me
+http://cpalone.me
 @mcpalone
 
+# slide1
 * Making Breakfast in Cereal
 er, serial.
 
@@ -16,8 +18,11 @@ er, serial.
 - Start toast
 - Take out toast
 
-.play slide1/slide1.go
+* Making Breakfast in Cereal
 
+.play slide1.go
+
+# slide2
 * What is concurrency?
 Concurrency without parallelism
 
@@ -29,6 +34,7 @@ Concurrency with parallelism
 - Playing a video game
 - Two people making breakfast
 
+# slide3
 * A First Look at Concurrency
 
 Make sure we're only using one CPU (i.e., one person). Otherwise, Go runtime will make this parallel.
@@ -39,9 +45,11 @@ The process goes...
 - Take out toast
 - Pour coffee
 
-.play slide2/slide2.go /^func main/,/^}/
+.play slide3.go /^func main/,/^}/
 
+# slide4
 * Channels
+
 What if we don't know how long to wait?
 
 Could exit before tasks are done.
@@ -49,8 +57,38 @@ Could exit before tasks are done.
 - use channels to communicate between goroutines
 - use select statements to wait on multiple channels
 
-.play slide3/slide3.go /^func main/,/^}/
+# slide5
+* Channels, pt. 2
 
+.play slide5.go /^func main/,/^}/
+
+# slide6
+* Channels, pt. 3
+We can simplify this by sharing a channel.
+
+	func MakeCoffee(ch chan string) {
+	    go func() {
+	        time.Sleep(time.Duration(5) * time.Second)
+	        ch <- "Coffee is done."
+	    }()
+	}
+
+	func MakeToast(ch chan string) {
+	    go func() {
+	        time.Sleep(time.Duration(3) * time.Second)
+	        ch <- "Toast is done"
+	    }()
+	}
+
+# slide7
+* Channels, pt. 4
+.play slide7.go /^func main/,/^}/
+
+But what if we don't know how many items are coming through the channel?
+
+\...we'll answer that shortly.
+
+# slide8
 * Cooperation
 
 How do we keep goroutines coordinated?
@@ -63,6 +101,46 @@ Other ways to cooperate
 - sync.Waitgroup
 - Closures (special case of sharing memory)
 
+# slide9
 * sync.Waitgroup and Closures
 
-.play slide5/slide5.go /^func main/,/^}/
+- Common to use closures to share a waitgroup
+- Channels are threadsafe- can share a channel between goroutines
+
+.code slide9.go /^func fanIn/,/^}/
+
+# slide10
+* Speaking of threadsafe...
+
+- What does it mean to be threadsafe?
+
+- Which Go types are threadsafe?
+
+- If a type isn't threadsafe, how do we manipulate with multiple goroutines?
+
+# slide11
+* "Don't communicate by sharing memory, share memory by communicating"
+
+Quote from Go Blog. (https://blog.golang.org/share-memory-by-communicating)
+
+- Use channels to pass data
+- Avoid global variables (as always!)
+- Pass references to objects through channels
+- This approach helps avoid race conditions.
+- Allows ensuring only on goroutine "owns" a data structure without using locks
+
+Why not locks?
+
+# slide12
+* Using locks
+
+- Locks also ensure that only one goroutine is using a data structure.
+- Can be useful - especially read/write locks (one writer OR multiple readers)
+
+However, you should try to write your code to avoid them. Why?
+
+_Channels_&_references_to_objects_create_shorter,_more_intuitive,_more_maintainable_code._
+
+# slide13
+* Communicating by sharing memory
+

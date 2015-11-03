@@ -28,14 +28,19 @@ func MakeToast() chan string {
 func main() {
 	runtime.GOMAXPROCS(2)
 	log.Println("Starting...")
+
 	coffee := MakeCoffee()
 	toast := MakeToast()
-	select {
-	case msg := <-toast:
-		log.Println(msg)
-	case msg := <-coffee:
-		log.Println(msg)
+
+	for i := 0; i < 2; i++ {
+		select {
+		case msg := <-toast:
+			log.Println(msg)
+		case msg := <-coffee:
+			log.Println(msg)
+		}
 	}
+
 	time.Sleep(time.Duration(10) * time.Second)
 	log.Println("Breakfast finished.")
 }
