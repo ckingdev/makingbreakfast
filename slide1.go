@@ -1,14 +1,16 @@
 package main
 
 import "time"
-import log "github.com/Sirupsen/logrus"
+import "log"
 
 func MakeCoffee() {
+	log.Println("Starting coffee.")
 	time.Sleep(time.Duration(5) * time.Second)
 	log.Println("Coffee is done.")
 }
 
 func MakeToast() {
+	log.Println("Starting toast.")
 	time.Sleep(time.Duration(3) * time.Second)
 	log.Println("Toast is done.")
 }

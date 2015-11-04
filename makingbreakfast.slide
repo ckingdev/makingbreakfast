@@ -4,7 +4,7 @@ or Basic Concurrency in Go
 Tags: concurrency, parallelism, goroutines, channels, sync
 
 Cammie Palone
-Consultant, Software Engineering
+Consultant, Software Engineering in Go
 cam@cpalone.me
 http://cpalone.me
 @mcpalone
@@ -12,6 +12,8 @@ http://cpalone.me
 # slide1
 * Making Breakfast in Cereal
 er, serial.
+
+What does it look like to make breakfast in serial (i.e., not concurrently)?
 
 - Start coffee
 - Pour coffee
@@ -57,24 +59,36 @@ Could exit before tasks are done.
 - use channels to communicate between goroutines
 - use select statements to wait on multiple channels
 
+	func MakeCoffee() chan string {
+		log.Println("Starting coffee.")
+		ret := make(chan string)
+		go func() {
+			time.Sleep(time.Duration(5) * time.Second)
+			ret <- "coffee"
+		}()
+		return ret
+	}
+
 # slide5
-* Channels, pt. 2
+* Channels
 
 .play slide5.go /^func main/,/^}/
 
 # slide6
-* Channels, pt. 3
+* Channels
 We can simplify this by sharing a channel.
 
 	func MakeCoffee(ch chan string) {
-	    go func() {
+	    log.Println("Starting coffee.")
+		go func() {
 	        time.Sleep(time.Duration(5) * time.Second)
 	        ch <- "Coffee is done."
 	    }()
 	}
 
 	func MakeToast(ch chan string) {
-	    go func() {
+	    log.Println("Starting toast.")
+		go func() {
 	        time.Sleep(time.Duration(3) * time.Second)
 	        ch <- "Toast is done"
 	    }()
@@ -93,9 +107,9 @@ But what if we don't know how many items are coming through the channel?
 
 How do we keep goroutines coordinated?
 
-Channels + select statements.
+- Channels + select statements.
 
-Other ways to cooperate
+Other ways to cooperate:
 
 - Sharing memory
 - sync.Waitgroup
@@ -108,6 +122,10 @@ Other ways to cooperate
 - Channels are threadsafe- can share a channel between goroutines
 
 .code slide9.go /^func fanIn/,/^}/
+
+* sync.Waitgroup and Closures
+
+.play slide9.go /^func main/,/^}/
 
 # slide10
 * Speaking of threadsafe...
@@ -142,5 +160,90 @@ However, you should try to write your code to avoid them. Why?
 _Channels_&_references_to_objects_create_shorter,_more_intuitive,_more_maintainable_code._
 
 # slide13
-* Communicating by sharing memory
+* Communicating by Sharing Memory
 
+What if we want a variable that keeps track of which foods are done?
+
+If we share memory, we need a mutex (lock).
+
+	type Done struct {
+		List string
+		Lock sync.Mutex
+	}
+
+	func (d *Done) Append(item string) {
+		d.Lock.Lock()
+		d.List = append(d.List, item)
+		d.Lock.Unlock()
+	}
+
+If we don't lock, we risk two goroutines trying to modify at the same time.
+
+Data could be lost.
+
+# slide14
+* Communicating by Sharing Memory
+
+	func MakeCoffee(done *Done) {
+		time.Sleep(time.Duration(5) * time.Second)
+		done.Append("coffee")
+	}
+
+	func MakeToast(done *Done) {
+		time.Sleep(time.Duration(3) * time.Second)
+		done.Append("toast")
+	}
+
+	func MakeEggs(done *Done) {
+		time.Sleep(time.Duration(5) * time.Second)
+		done.Append("eggs")
+	}
+
+.play slide13.go /^func main/,/^}/
+
+# slide15
+* Sharing Memory by Communicating
+
+On the other hand...
+
+We can have one worker collect results via channels.
+
+	func Gather(done chan string) []string {
+		var doneList []string
+		for i := 0; i < 3; i++ {
+			item := <-done
+			doneList = append(doneList, item)
+		}
+		return doneList
+	}
+
+How do we know that doneList is safe from the previous problem?
+
+It's only in scope in Gather!
+
+* Sharing Memory by Communicating
+
+.play slide15.go /^func main/,/^}/
+
+What did we gain over locks?
+
+- simpler code - no special struct and method
+- separation of functionality- some goroutines produce, some consume, but no overlap
+- impossible to access the list outside of the Gather function - immune to mistakes with locking logic
+
+* The drawbacks
+
+Goroutines are great! Why don't I spin up a goroutine for every task I need done?
+
+- Each goroutine is allocated a _small_ amount of memory- this rarely is significant in practice
+- Main cost of concurrency in Go is communication via channels
+- Passing via channel -> copying, which takes time
+
+* Wrapping up
+
+- Channels and goroutines are powerful in combination, but concurrency introduces new problems
+- Control scope of variables
+- Use waitgroups to coordinate multiple workers
+- Share or merge channels to simplify code
+- Go is non-traditional - share memory by communicating!
+- goroutines are cheap but not free - understand the cost

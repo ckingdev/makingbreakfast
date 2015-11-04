@@ -1,27 +1,30 @@
 package main
 
 import (
+	"log"
 	"runtime"
 	"sync"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 func MakeCoffee() chan string {
+	log.Println("Starting coffee.")
 	ret := make(chan string)
 	go func() {
 		time.Sleep(time.Duration(5) * time.Second)
 		ret <- "Coffee is done."
+		close(ret)
 	}()
 	return ret
 }
 
 func MakeToast() chan string {
+	log.Println("Starting toast.")
 	ret := make(chan string)
 	go func() {
 		time.Sleep(time.Duration(3) * time.Second)
 		ret <- "Toast is done"
+		close(ret)
 	}()
 	return ret
 }
@@ -52,15 +55,9 @@ func main() {
 	coffee := MakeCoffee()
 	toast := MakeToast()
 
-	for i := 0; i < 2; i++ {
-		select {
-		case msg := <-toast:
-			log.Println(msg)
-		case msg := <-coffee:
-			log.Println(msg)
-		}
+	for msg := range fanIn(coffee, toast) {
+		log.Println(msg)
 	}
-
 	time.Sleep(time.Duration(10) * time.Second)
 	log.Println("Breakfast finished.")
 }

@@ -8,6 +8,7 @@ import (
 )
 
 func MakeCoffee() chan string {
+	log.Println("Starting coffee.")
 	ret := make(chan string)
 	go func() {
 		time.Sleep(time.Duration(5) * time.Second)
@@ -17,6 +18,7 @@ func MakeCoffee() chan string {
 }
 
 func MakeToast() chan string {
+	log.Println("Starting toast.")
 	ret := make(chan string)
 	go func() {
 		time.Sleep(time.Duration(3) * time.Second)
