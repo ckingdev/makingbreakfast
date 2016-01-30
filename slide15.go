@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 )
 
@@ -33,9 +34,9 @@ func Gather(done chan string) []string {
 
 func main() {
 	doneCh := make(chan string)
-	MakeCoffee(doneCh)
-	MakeToast(doneCh)
-	MakeEggs(doneCh)
-	_ = Gather(doneCh)
-
+	go MakeCoffee(doneCh)
+	go MakeToast(doneCh)
+	go MakeEggs(doneCh)
+	doneList := Gather(doneCh)
+	log.Println(doneList)
 }

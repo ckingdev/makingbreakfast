@@ -34,12 +34,12 @@ func fanIn(chs ...chan string) chan string {
 	var wg sync.WaitGroup
 	for _, ch := range chs {
 		wg.Add(1)
-		go func() {
+		go func(ch chan string) {
 			defer wg.Done()
 			for msg := range ch {
 				fannedIn <- msg
 			}
-		}()
+		}(ch)
 	}
 	go func() {
 		wg.Wait()

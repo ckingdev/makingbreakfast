@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -24,7 +25,7 @@ func MakeEggs(done *Done) {
 }
 
 type Done struct {
-	List string
+	List []string
 	Lock sync.Mutex
 }
 
@@ -35,8 +36,8 @@ func (d *Done) Append(item string) {
 }
 
 func main() {
-	var done Done
-	MakeCoffee(done)
-	MakeEggs(done)
-	MakeToast(done)
+	var done Done = Done{List: make([]string, 0)}
+	MakeCoffee(&done)
+	MakeEggs(&done)
+	MakeToast(&done)
 }
